@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Band Plan Dial — HF/VHF/UHF frequency lookup</title>
+<title>TuneFreq — HF/VHF/UHF frequency lookup</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -99,6 +99,23 @@
 
   /* ---- dial ---- */
   .dial{margin-top:24px;position:relative;padding:6px 0 2px}
+  .dial-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;
+    flex-wrap:wrap;margin-bottom:12px}
+  .zoom-presets{display:flex;gap:6px;flex-wrap:wrap}
+  .zoom-presets button{background:var(--panel);border:1px solid var(--line-2);color:var(--ink-dim);
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.06em;
+    padding:6px 11px;border-radius:6px;cursor:pointer;transition:.15s}
+  .zoom-presets button.on{background:var(--ink);color:var(--chassis);border-color:var(--ink);font-weight:700}
+  .zoom-presets button:hover{border-color:var(--amber-soft);color:var(--dial)}
+  .zoom-presets button.on:hover{color:var(--chassis)}
+  .zoom-presets button:focus-visible,.zoom-btns button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .zoom-btns{display:flex;align-items:center;gap:8px}
+  .zoom-btns button{width:30px;height:30px;background:var(--panel);border:1px solid var(--line-2);
+    color:var(--dial);font-family:"JetBrains Mono",monospace;font-size:18px;line-height:1;
+    border-radius:6px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:center}
+  .zoom-btns button:hover{border-color:var(--amber-soft);background:var(--panel-2)}
+  .zoom-window{font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--amber-soft);
+    letter-spacing:.03em;white-space:nowrap;min-width:118px;text-align:right}
   .dial-scale{position:relative;height:16px;margin:0 2px 4px}
   .dial-scale .mark{position:absolute;top:0;transform:translateX(-50%);
     font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-dim);white-space:nowrap}
@@ -236,7 +253,7 @@
 <div class="wrap">
 
   <div class="eyebrow"><span class="dot"></span> HF · VHF · UHF Band Plan &nbsp;·&nbsp; Nashville EM76</div>
-  <h1>Tune &amp; <span>Identify</span></h1>
+  <h1>Tune<span>Freq</span></h1>
   <p class="lede">Enter a frequency and the pointer finds it on the dial, then lists every band and allocation it falls in — amateur, shortwave broadcast, and utility.</p>
 
   <!-- CONSOLE -->
@@ -265,14 +282,27 @@
 
     <!-- DIAL -->
     <div class="dial">
+      <div class="dial-tools">
+        <div class="zoom-presets" role="group" aria-label="Dial range presets">
+          <button data-lo="0.1" data-hi="30" class="on">Full</button>
+          <button data-lo="0.1" data-hi="2">LW/MW</button>
+          <button data-lo="2" data-hi="10">2–10 MHz</button>
+          <button data-lo="9" data-hi="30">9–30 MHz</button>
+        </div>
+        <div class="zoom-btns">
+          <button id="zoutBtn" title="Zoom out" aria-label="Zoom out">−</button>
+          <button id="zinBtn" title="Zoom in" aria-label="Zoom in">+</button>
+          <span class="zoom-window" id="zoomWin"></span>
+        </div>
+      </div>
       <div class="dial-scale" id="scale"></div>
       <div class="lanes" id="lanes">
         <div class="lane" id="lane-broadcast"><span class="lane-tag">Broadcast</span></div>
         <div class="lane" id="lane-amateur"><span class="lane-tag">Amateur</span></div>
-        <div class="lane" id="lane-util" style="height:12px"><span class="lane-tag" style="background:none">Utility</span></div>
+        <div class="lane" id="lane-util"><span class="lane-tag">Utility</span></div>
         <div class="pointer" id="pointer" style="left:-100px"></div>
       </div>
-      <div class="dial-hint">Tap or drag the dial to tune · ↑ ↓ keys nudge · scroll to fine-tune</div>
+      <div class="dial-hint">Tap or drag to tune · double-click a band to zoom · ↑ ↓ nudge · scroll to fine-tune</div>
       <div class="offdial-note" id="offdial">↑ Above the HF dial (30 MHz) — see the card below and the VHF/UHF rows in the reference.</div>
     </div>
   </div>
@@ -311,7 +341,7 @@
 
 <script>
 /* ---------- VERSION ---------- */
-const APP_VERSION = "26.08.03a";
+const APP_VERSION = "26.08.03c";
 
 /* ---------- DATA ---------- lo/hi in MHz. cat: ham | broadcast | utility ---------- */
 const BANDS = [
@@ -363,21 +393,48 @@ const BANDS = [
   {name:"MURS", cat:"utility", ticks:[151.82,151.88,151.94,154.57,154.6], use:"Multi-Use Radio Service — 5 VHF channels, license-free", note:"No license and no repeaters; 2 W max. A quieter alternative to FRS."},
   {name:"FRS / GMRS", cat:"utility", lo:462.5625, hi:462.725, use:"Family Radio & GMRS — UHF FM walkie-talkies", note:"Channels 1–7 & 15–22. FRS is license-free; GMRS needs a cheap FCC license for more power and repeaters."},
   {name:"FRS 8–14 / GMRS in", cat:"utility", lo:467.5625, hi:467.725, use:"FRS low-power channels 8–14 + GMRS repeater inputs", note:"Handhelds use these as FRS 8–14; GMRS repeaters receive here."},
+
+  // Curated HF utility fill — the gaps a listener actually tunes
+  {name:"CHU (time)", cat:"utility", ticks:[3.33,7.85,14.67], use:"Canadian time signal — CHU Ottawa", note:"Like WWV, a handy propagation check."},
+  {name:"Marine 4 MHz", cat:"utility", lo:4.063, hi:4.438, use:"Maritime SSB — ship/coast stations", note:"Distress & calling on 4125 kHz USB."},
+  {name:"Marine 6 MHz", cat:"utility", lo:6.2, hi:6.525, use:"Maritime SSB", note:"Distress & calling on 6215 kHz USB."},
+  {name:"Marine 8 MHz", cat:"utility", lo:8.195, hi:8.815, use:"Maritime SSB — busy ship band", note:"Distress & calling on 8291 kHz USB."},
+  {name:"Marine 12 MHz", cat:"utility", lo:12.23, hi:13.2, use:"Maritime SSB — long-haul daytime", note:"Coast-station traffic and weather."},
+  {name:"Marine 16 MHz", cat:"utility", lo:16.36, hi:17.41, use:"Maritime SSB — long-haul daytime", note:""},
+  {name:"Aero 5 MHz", cat:"utility", lo:5.45, hi:5.73, use:"Aeronautical SSB — oceanic & VOLMET", note:"Air-traffic control and VOLMET weather."},
+  {name:"Aero 8–9 MHz", cat:"utility", lo:8.815, hi:9.04, use:"Aeronautical SSB — oceanic & VOLMET", note:"VOLMET weather e.g. 8828 kHz USB."},
+  {name:"Aero 11 MHz", cat:"utility", lo:11.175, hi:11.4, use:"Aeronautical SSB + US military HFGCS", note:"HFGCS on 11175 kHz USB."},
+  {name:"Aero 13 MHz", cat:"utility", lo:13.2, hi:13.36, use:"Aeronautical SSB — oceanic routes", note:""},
 ];
 
-/* ---------- DIAL SCALE ---------- */
-const F_MIN=0.1, F_MAX=30; // MHz dial window
-const L_MIN=Math.log10(F_MIN), L_SPAN=Math.log10(F_MAX)-L_MIN;
-const xFrac = f => (Math.log10(Math.max(F_MIN,Math.min(F_MAX,f)))-L_MIN)/L_SPAN;
+/* ---------- DIAL SCALE (zoomable view window) ---------- */
+const F_FLOOR=0.1, F_CEIL=30;        // absolute dial limits (MHz)
+let viewMin=0.1, viewMax=30;         // current visible window
+let L_MIN=Math.log10(viewMin), L_SPAN=Math.log10(viewMax)-L_MIN;
+function recalcView(){ L_MIN=Math.log10(viewMin); L_SPAN=Math.log10(viewMax)-L_MIN; }
+const xFrac = f => (Math.log10(Math.max(viewMin,Math.min(viewMax,f)))-L_MIN)/L_SPAN;
 
+function niceMarks(min,max){
+  const cand=[];
+  for(let e=-2;e<=2;e++){ [1,1.5,2,2.5,3,4,5,7].forEach(m=>cand.push(m*Math.pow(10,e))); }
+  let inside=cand.filter(v=>v>=min*0.999 && v<=max*1.001);
+  if(inside.length>9){ const step=Math.ceil(inside.length/9); inside=inside.filter((_,i)=>i%step===0); }
+  if(inside.length<3){ inside=[]; for(let i=0;i<=4;i++){ inside.push(min*Math.pow(max/min,i/4)); } }
+  return inside;
+}
+function markLabel(v,dec){
+  if(v<1) return Math.round(v*1000)+'k';
+  return (+v.toFixed(dec)).toString()+'M';
+}
 function buildScale(){
-  const marks=[0.1,0.3,0.5,1,3,5,10,15,30];
   const el=document.getElementById('scale');
   el.innerHTML='';
-  marks.forEach(m=>{
+  const span=viewMax-viewMin;
+  const dec = span>=10?0 : span>=1?1 : span>=0.2?2 : 3;
+  niceMarks(viewMin,viewMax).forEach(m=>{
     const d=document.createElement('div');
     d.className='mark';d.style.left=(xFrac(m)*100)+'%';
-    d.textContent = m<1 ? (m*1000)+'k' : m+'M';
+    d.textContent=markLabel(m,dec);
     el.appendChild(d);
   });
 }
@@ -386,14 +443,14 @@ function buildLanes(){
   const bc=document.getElementById('lane-broadcast');
   const am=document.getElementById('lane-amateur');
   const ut=document.getElementById('lane-util');
-  bc.querySelectorAll('.seg').forEach(e=>e.remove());
-  am.querySelectorAll('.seg').forEach(e=>e.remove());
+  bc.querySelectorAll('.seg,.tick').forEach(e=>e.remove());
+  am.querySelectorAll('.seg,.tick').forEach(e=>e.remove());
   ut.querySelectorAll('.seg,.tick').forEach(e=>e.remove());
 
   BANDS.forEach((b,i)=>{
     if(b.ticks){
       b.ticks.forEach(t=>{
-        if(t>F_MAX) return;
+        if(t>F_CEIL || t<viewMin || t>viewMax) return;
         const k=document.createElement('div');
         k.className='tick';k.style.left='calc('+(xFrac(t)*100)+'% - 1px)';
         k.title=b.name+' — '+t+' MHz';
@@ -402,19 +459,54 @@ function buildLanes(){
       });
       return;
     }
-    if(b.lo>=F_MAX) return; // off the HF dial
+    if(b.lo>=F_CEIL) return;                 // truly off the HF dial (VHF/UHF)
+    if(b.hi<viewMin || b.lo>viewMax) return; // outside the current zoom window
     const seg=document.createElement('div');
     seg.className='seg '+b.cat;
     seg.dataset.idx=i;
-    const l=xFrac(b.lo)*100, w=Math.max((xFrac(b.hi)-xFrac(b.lo))*100,0.4);
+    const l=xFrac(b.lo)*100, w=Math.max(xFrac(b.hi)*100-l,0.4);
     seg.style.left=l+'%';seg.style.width=w+'%';
-    seg.title=b.name+'  ('+fmtRange(b)+')';
+    seg.title=b.name+'  ('+fmtRange(b)+')  — double-click to zoom';
     const lbl=document.createElement('span');lbl.className='lbl';
     lbl.textContent=b.name.replace(/ m$| cm$| SWBC$| MW$/,'');
     seg.appendChild(lbl);
     seg.addEventListener('click',()=>{ if(justDragged) return; setFreq((b.lo+b.hi)/2); });
-    (b.cat==='broadcast'?bc:am).appendChild(seg);
+    seg.addEventListener('dblclick',()=>zoomToBand(b));
+    const lane = b.cat==='broadcast'?bc : b.cat==='utility'?ut : am;
+    lane.appendChild(seg);
   });
+}
+
+/* ---------- ZOOM ---------- */
+function applyView(){
+  viewMin=Math.max(F_FLOOR,viewMin); viewMax=Math.min(F_CEIL,viewMax);
+  if(viewMax/viewMin<1.05) viewMax=viewMin*1.05;
+  recalcView(); buildScale(); buildLanes(); update();
+  document.getElementById('zoomWin').textContent=fmtWin();
+  document.querySelectorAll('.zoom-presets button').forEach(btn=>{
+    btn.classList.toggle('on', Math.abs(+btn.dataset.lo-viewMin)<1e-6 && Math.abs(+btn.dataset.hi-viewMax)<1e-6);
+  });
+}
+function fmtWin(){
+  const f=v=> v<1? Math.round(v*1000)+' kHz' : (+v.toFixed(v<10?2:1))+' MHz';
+  return f(viewMin)+'  –  '+f(viewMax);
+}
+function zoomBy(factor){
+  const lmin=Math.log10(viewMin), lmax=Math.log10(viewMax);
+  const center = (curMHz!=null && curMHz>=viewMin && curMHz<=viewMax) ? Math.log10(curMHz) : (lmin+lmax)/2;
+  const floorL=Math.log10(F_FLOOR), ceilL=Math.log10(F_CEIL);
+  let half=Math.max(0.012,Math.min((ceilL-floorL)/2,(lmax-lmin)/2*factor));
+  let nmin=center-half, nmax=center+half;
+  if(nmin<floorL){ nmax+=floorL-nmin; nmin=floorL; }
+  if(nmax>ceilL){ nmin-=nmax-ceilL; nmax=ceilL; }
+  viewMin=Math.pow(10,Math.max(floorL,nmin)); viewMax=Math.pow(10,Math.min(ceilL,nmax));
+  applyView();
+}
+function zoomToBand(b){
+  const lo=b.ticks?Math.min(...b.ticks):b.lo, hi=b.ticks?Math.max(...b.ticks):b.hi;
+  const pad=Math.max((Math.log10(hi)-Math.log10(lo))*0.5,0.06);
+  viewMin=Math.pow(10,Math.log10(lo)-pad); viewMax=Math.pow(10,Math.log10(hi)+pad);
+  applyView();
 }
 
 /* ---------- FORMAT ---------- */
@@ -505,10 +597,18 @@ function update(){
     lb.classList.remove('show');
   }
 
-  // pointer
-  if(mhz>F_MAX){
+  // pointer — respects the current zoom window
+  if(mhz>viewMax || mhz<viewMin){
     ptr.classList.add('offdial');
-    ptr.style.left='calc(100% - 2px)';
+    if(mhz>viewMax){
+      ptr.style.left='calc(100% - 2px)';
+      off.textContent = viewMax>=F_CEIL-1e-4
+        ? '↑ Above the HF dial (30 MHz) — see the card below and the VHF/UHF rows in the reference.'
+        : '→ '+trim(+mhz.toFixed(4))+' MHz is above the zoomed view — zoom out to bring it back on the dial.';
+    }else{
+      ptr.style.left='0';
+      off.textContent = '← '+trim(+mhz.toFixed(4))+' MHz is below the zoomed view — zoom out to bring it back on the dial.';
+    }
     off.classList.add('show');
   }else{
     ptr.classList.remove('offdial');
@@ -613,6 +713,13 @@ document.querySelectorAll('.filters button').forEach(btn=>{
 document.getElementById('search').addEventListener('input',e=>{refSearch=e.target.value;renderTable();});
 window.addEventListener('resize',()=>{buildScale();buildLanes();update();});
 
+/* ---------- ZOOM CONTROLS ---------- */
+document.querySelectorAll('.zoom-presets button').forEach(btn=>{
+  btn.addEventListener('click',()=>{ viewMin=+btn.dataset.lo; viewMax=+btn.dataset.hi; applyView(); });
+});
+document.getElementById('zinBtn').addEventListener('click',()=>zoomBy(0.55));
+document.getElementById('zoutBtn').addEventListener('click',()=>zoomBy(1/0.55));
+
 /* ---------- INTERACTIVE DIAL ---------- */
 const lanesEl=document.getElementById('lanes');
 const ptrEl=document.getElementById('pointer');
@@ -657,7 +764,7 @@ function nudge(dir,big){
 }
 
 document.getElementById('ver').textContent='v'+APP_VERSION;
-buildScale();buildLanes();buildChips();renderTable();update();
+buildChips();renderTable();applyView();
 </script>
 </body>
 </html>
