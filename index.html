@@ -227,6 +227,56 @@
   td.range{font-family:"JetBrains Mono",monospace;color:var(--amber-soft);white-space:nowrap;font-size:13px}
   td.use{color:var(--ink-dim)}
 
+  /* schedule */
+  .sched{margin-top:46px}
+  .sched-intro{color:var(--ink-dim);font-size:15px;max-width:64ch;margin:6px 0 16px}
+  .loader{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--panel);
+    border:1px solid var(--line-2);border-radius:var(--radius);padding:14px 16px}
+  .sched .btn{background:var(--panel-2);border:1px solid var(--line-2);color:var(--ink);
+    font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.03em;padding:9px 14px;
+    border-radius:7px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:.15s}
+  .sched .btn:hover{border-color:var(--amber-soft);color:var(--dial)}
+  .sched .file-btn{position:relative;overflow:hidden;color:#1a1409;background:var(--amber);border-color:var(--amber);font-weight:700}
+  .sched .file-btn:hover{filter:brightness(1.07);color:#1a1409}
+  .sched .file-btn input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+  .sched .btn:focus-visible,.chk input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .sched-status{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-dim);letter-spacing:.02em}
+  .sched-status b{color:var(--amber-soft)}
+  .sched-status.err{color:var(--red)}
+  .sched-controls{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-top:16px;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .sched-controls[hidden]{display:none}
+  .ctl{display:flex;flex-direction:column;gap:6px}
+  .ctl.grow{flex:1;min-width:170px}
+  .ctl label{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}
+  .ctl input,.ctl select{background:#100d09;border:1px solid var(--line-2);border-radius:7px;color:var(--dial);
+    font-family:"JetBrains Mono",monospace;font-size:14px;padding:9px 11px;outline:none}
+  .ctl input:focus,.ctl select:focus{border-color:var(--amber-soft)}
+  .sched-controls .btn{align-self:flex-end}
+  .chk{display:inline-flex;align-items:center;gap:7px;font-family:"JetBrains Mono",monospace;font-size:12px;
+    color:var(--ink);cursor:pointer;padding-bottom:10px}
+  .chk input{accent-color:var(--amber);width:15px;height:15px}
+  .sched-summary{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink-dim);margin:16px 2px 0}
+  .sched-summary b{color:var(--amber)}
+  .sched-scroll{overflow-x:auto;margin-top:10px;border:1px solid var(--line);border-radius:var(--radius)}
+  .sched-scroll[hidden]{display:none}
+  .sched-table{min-width:660px;font-size:14px;border-collapse:collapse;width:100%}
+  .sched-table thead th{position:sticky;top:0;background:var(--panel-2);z-index:1}
+  .sched-table tbody tr{cursor:default}
+  .sched-table td.k{font-family:"JetBrains Mono",monospace;color:var(--amber-soft);white-space:nowrap}
+  .sched-table td.muted{color:var(--ink-dim)}
+  .sched-table tr.onair{background:rgba(127,174,135,.14)}
+  .badge-on{display:inline-block;background:var(--ham);color:#12100b;font-family:"JetBrains Mono",monospace;
+    font-size:9px;font-weight:700;letter-spacing:.08em;padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px}
+  .sched-actions{margin-top:14px}
+  .sched-actions[hidden]{display:none}
+  .btn-amber{background:var(--amber);color:#1a1409;font-family:"JetBrains Mono",monospace;font-size:13px;
+    font-weight:700;letter-spacing:.02em;border:0;padding:11px 18px;border-radius:7px;cursor:pointer;transition:filter .15s}
+  .btn-amber:hover{filter:brightness(1.08)}
+  .btn-amber:focus-visible{outline:2px solid var(--dial);outline-offset:2px}
+  .codes-link{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-dim);margin-left:10px}
+  .codes-link a{color:var(--amber-soft)}
+
   footer{margin-top:34px;color:var(--ink-dim);font-size:13px;font-family:"JetBrains Mono",monospace;
     letter-spacing:.02em;border-top:1px solid var(--line);padding-top:16px}
   footer .ver{color:var(--amber-soft);white-space:nowrap}
@@ -236,13 +286,15 @@
     .entry input{width:110px}
     .lane-tag{font-size:8px}
     .card-use,.card-note{font-size:15px}
-    thead{display:none}
-    table,tbody,tr,td{display:block;width:100%}
-    tbody tr{padding:11px 2px}
-    tbody td{padding:2px 0}
+    .ref thead{display:none}
+    .ref table,.ref tbody,.ref tr,.ref td{display:block;width:100%}
+    .ref tbody tr{padding:11px 2px}
+    .ref tbody td{padding:2px 0}
     td.name{white-space:normal;font-size:17px}
     td.range{white-space:normal;font-size:13px;margin-top:1px}
     td.use{display:block;color:var(--ink-dim);font-size:14px;margin-top:3px}
+    .sched-controls{gap:12px;padding:13px}
+    .sched-table{font-size:13px}
   }
   @media (prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
@@ -336,12 +388,66 @@
     </table>
   </div>
 
+  <!-- SCHEDULE -->
+  <div class="sched">
+    <div class="result-head">Schedule — what's on air</div>
+    <p class="sched-intro">Load the EiBi shortwave schedule, then see everything broadcasting at a given UTC time. Narrow it to a frequency or a text filter, and download the result as a CSV table.</p>
+
+    <div class="loader">
+      <label class="btn file-btn">Load schedule file<input id="schedFile" type="file" accept=".csv,.txt"></label>
+      <button class="btn" id="schedFetch">Fetch latest</button>
+      <a class="btn" id="eibiDl" href="http://www.eibispace.de/dx/" target="_blank" rel="noopener">Download from EiBi ↗</a>
+      <span class="sched-status" id="schedStatus">No schedule loaded — grab <code>sked-a26.csv</code> from EiBi, then load it here.</span>
+    </div>
+
+    <div class="sched-controls" id="schedControls" hidden>
+      <div class="ctl">
+        <label>Time (UTC)</label>
+        <input id="schedTime" type="time">
+      </div>
+      <button class="btn" id="schedNow">Now</button>
+      <div class="ctl">
+        <label>Frequency (kHz)</label>
+        <input id="schedFreq" type="text" inputmode="decimal" placeholder="any" autocomplete="off">
+      </div>
+      <div class="ctl">
+        <label>Tolerance</label>
+        <select id="schedTol">
+          <option value="">exact</option>
+          <option value="2">± 2 kHz</option>
+          <option value="5" selected>± 5 kHz</option>
+          <option value="10">± 10 kHz</option>
+        </select>
+      </div>
+      <button class="btn" id="schedUseDial">Use dial</button>
+      <div class="ctl grow">
+        <label>Filter (station / language / target)</label>
+        <input id="schedText" type="search" placeholder="e.g. english, BBC, NAm" autocomplete="off">
+      </div>
+      <label class="chk"><input type="checkbox" id="schedOnAir" checked> On air only</label>
+      <label class="chk"><input type="checkbox" id="schedTodayOnly"> Today only</label>
+      <label class="chk"><input type="checkbox" id="schedFollow" checked> Follow dial</label>
+    </div>
+
+    <div class="sched-summary" id="schedSummary"></div>
+    <div class="sched-scroll" id="schedScroll" hidden>
+      <table class="sched-table">
+        <thead><tr><th>kHz</th><th>Station</th><th>UTC</th><th>Lang</th><th>Target</th><th>Site / remarks</th><th>Days</th></tr></thead>
+        <tbody id="schedBody"></tbody>
+      </table>
+    </div>
+    <div class="sched-actions" id="schedActions" hidden>
+      <button class="btn-amber" id="schedExport">Download table (CSV) ↓</button>
+      <span class="codes-link">Language &amp; target codes: <a href="http://www.eibispace.de/dx/README.TXT" target="_blank" rel="noopener">EiBi readme ↗</a></span>
+    </div>
+  </div>
+
   <footer>Allocations are US/ITU Region 2 general references for listening, not a legal operating authority. Meter-band edges vary seasonally (HFCC/EiBi). Built as a personal reference. <span class="ver" id="ver"></span></footer>
 </div>
 
 <script>
 /* ---------- VERSION ---------- */
-const APP_VERSION = "26.08.03c";
+const APP_VERSION = "26.08.03e";
 
 /* ---------- DATA ---------- lo/hi in MHz. cat: ham | broadcast | utility ---------- */
 const BANDS = [
@@ -587,14 +693,25 @@ function update(){
   const bandTag = ms.length ? ms.map(b=>b.name).join(' · ') : 'no allocation';
   sub.innerHTML = kHz.toLocaleString()+' kHz &nbsp;·&nbsp; <b>'+bandTag+'</b>';
 
-  // live schedule deep link — shortwave.live covers LW/MW/SW (~40 kHz–30 MHz)
+  // live schedule link — routes into the loaded EiBi schedule when present, else shortwave.live
+  const hasSched = schedData.length>0;
   if(mhz>=0.03 && mhz<=30){
     const q=trim(+(mhz*1000).toFixed(3));
     ll.href='https://shortwave.live/khz?q='+q;
-    ll.textContent="Who's on air near "+q+' kHz ↗';
+    ll.textContent = hasSched ? "See who's on air near "+q+' kHz ↓' : "Who's on air near "+q+' kHz ↗';
+    const hint=lb.querySelector('.hint');
+    if(hint) hint.textContent = hasSched ? 'from your loaded EiBi schedule below' : 'live shortwave schedule · shortwave.live (EiBi/AOKI)';
     lb.classList.add('show');
   }else{
     lb.classList.remove('show');
+  }
+  // follow dial → live-update the schedule query as you tune (throttled)
+  if(hasSched){
+    const follow=document.getElementById('schedFollow');
+    if(follow && follow.checked){
+      document.getElementById('schedFreq').value = trim(+(mhz*1000).toFixed(3));
+      scheduleFollowQuery();
+    }
   }
 
   // pointer — respects the current zoom window
@@ -762,6 +879,196 @@ function nudge(dir,big){
   if(v<0.001) v=0.001;
   setFreq(+v.toFixed(4));
 }
+
+/* ================= SCHEDULE (EiBi) ================= */
+function seasonCode(d){
+  const y=d.getUTCFullYear(), m=d.getUTCMonth()+1, day=d.getUTCDate();
+  const isA=(m>3&&m<10)||(m===3&&day>=29)||(m===10&&day<26);
+  if(isA) return 'a'+String(y).slice(2);
+  const by=(m<=3)?y-1:y;
+  return 'b'+String(by).slice(2);
+}
+const EIBI_URL='http://www.eibispace.de/dx/sked-'+seasonCode(new Date())+'.csv';
+
+let schedData=[], schedResults=[];
+
+function parseEiBi(text){
+  const out=[];
+  const lines=text.split(/\r?\n/);
+  for(const line of lines){
+    if(!line || line.indexOf(';')<0) continue;
+    const f=line.split(';');
+    const khz=parseFloat(f[0]);
+    if(!isFinite(khz)) continue;            // skips header + non-data rows
+    const tm=(f[1]||'').trim();
+    const dash=tm.indexOf('-');
+    let t0=0,t1=2400;
+    if(dash>0){ t0=parseInt(tm.slice(0,dash),10)||0; t1=parseInt(tm.slice(dash+1),10); if(!isFinite(t1))t1=2400; }
+    out.push({khz,tm,t0,t1,
+      days:(f[2]||'').trim(), itu:(f[3]||'').trim(), station:(f[4]||'').trim(),
+      lng:(f[5]||'').trim(), target:(f[6]||'').trim(), rem:(f[7]||'').trim(),
+      start:(f[9]||'').trim(), stop:(f[10]||'').trim()});
+  }
+  return out;
+}
+function onairAt(e,t){
+  if(e.t0===0 && e.t1>=2400) return true;
+  if(e.t0===e.t1) return true;
+  return (e.t1<=e.t0) ? (t>=e.t0 || t<e.t1) : (t>=e.t0 && t<e.t1);
+}
+function dayMatch(e,iso){
+  const d=e.days;
+  if(!d) return true;
+  if(/^[1-7]+$/.test(d)) return d.indexOf(String(iso))>=0;
+  const m=d.match(/^([1-7])-([1-7])$/);
+  if(m){ const a=+m[1],b=+m[2]; return a<=b ? (iso>=a&&iso<=b) : (iso>=a||iso<=b); }
+  return true;   // letter/special codes → don't exclude
+}
+function nowUTCHHMM(){ const d=new Date(); return d.getUTCHours()*100+d.getUTCMinutes(); }
+function setSchedTimeNow(){ const d=new Date();
+  document.getElementById('schedTime').value=String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0'); }
+function readSchedTime(){ const v=document.getElementById('schedTime').value;
+  if(!v) return nowUTCHHMM(); const p=v.split(':'); return (+p[0])*100+(+p[1]); }
+function hhmm(t){ return String(Math.floor(t/100)).padStart(2,'0')+':'+String(t%100).padStart(2,'0'); }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function runSchedQuery(){
+  if(!schedData.length) return;
+  const t=readSchedTime();
+  const onAirOnly=document.getElementById('schedOnAir').checked;
+  const todayOnly=document.getElementById('schedTodayOnly').checked;
+  const iso=((new Date().getUTCDay()+6)%7)+1;   // 1=Mon … 7=Sun (UTC)
+  const fRaw=document.getElementById('schedFreq').value.trim().replace(/,/g,'');
+  const fVal=parseFloat(fRaw);
+  const useFreq=fRaw!=='' && isFinite(fVal);
+  const tolSel=document.getElementById('schedTol').value;
+  const tol = tolSel===''?0.5:+tolSel;
+  const q=document.getElementById('schedText').value.trim().toLowerCase();
+
+  const res=schedData.filter(e=>{
+    if(onAirOnly && !onairAt(e,t)) return false;
+    if(todayOnly && !dayMatch(e,iso)) return false;
+    if(useFreq && Math.abs(e.khz-fVal)>tol) return false;
+    if(q && (e.station+' '+e.lng+' '+e.target+' '+e.rem+' '+e.itu).toLowerCase().indexOf(q)<0) return false;
+    return true;
+  });
+  res.sort((a,b)=> a.khz-b.khz || a.t0-b.t0);
+  schedResults=res;
+  renderSched(res,t,onAirOnly);
+}
+function renderSched(res,t,onAirOnly){
+  const body=document.getElementById('schedBody');
+  const scroll=document.getElementById('schedScroll');
+  const actions=document.getElementById('schedActions');
+  const summary=document.getElementById('schedSummary');
+  const CAP=500, shown=res.slice(0,CAP);
+  body.innerHTML = shown.map(e=>{
+    const live = !onAirOnly && onairAt(e,t);
+    return `<tr class="${live?'onair':''}">
+      <td class="k">${trim(e.khz)}</td>
+      <td>${esc(e.station)||'—'}${live?' <span class="badge-on">ON</span>':''}</td>
+      <td class="k">${esc(e.tm)||'—'}</td>
+      <td>${esc(e.lng)||'—'}</td>
+      <td>${esc(e.target)||'—'}</td>
+      <td class="muted">${esc(e.rem)}${e.itu?' · '+esc(e.itu):''}</td>
+      <td class="muted">${esc(e.days)||'daily'}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" class="muted" style="padding:16px">Nothing matches — widen the time window, raise the tolerance, or clear the filter.</td></tr>`;
+
+  summary.innerHTML = res.length
+    ? `<b>${res.length.toLocaleString()}</b> ${onAirOnly ? 'broadcast'+(res.length>1?'s':'')+' on air at '+hhmm(t)+' UTC' : 'matching entries'}${res.length>CAP?` · showing first ${CAP} — download for the full set`:''}`
+    : 'No matches at this time / filter.';
+  scroll.hidden=false;
+  actions.hidden = res.length===0;
+}
+function csvCell(v){ v=(v==null?'':String(v)); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function exportSched(){
+  if(!schedResults.length) return;
+  const head=['kHz','Time_UTC','Station','Lang','Target','Site_Remarks','ITU','Days','Start','Stop'];
+  const rows=schedResults.map(e=>[e.khz,e.tm,e.station,e.lng,e.target,e.rem,e.itu,e.days,e.start,e.stop]);
+  const csv=[head].concat(rows).map(r=>r.map(csvCell).join(',')).join('\r\n');
+  const utc=hhmm(readSchedTime()).replace(':','');
+  const fRaw=document.getElementById('schedFreq').value.trim();
+  const name='tunefreq_'+utc+'utc'+(fRaw?('_'+fRaw+'kHz'):'')+'.csv';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function setSchedStatus(html,err){ const s=document.getElementById('schedStatus'); s.innerHTML=html; s.classList.toggle('err',!!err); }
+function cacheSave(text){ try{
+  localStorage.setItem('tunefreq_sked',text);
+  localStorage.setItem('tunefreq_sked_meta',JSON.stringify({season:seasonCode(new Date()),date:Date.now(),rows:schedData.length}));
+}catch(_){} }
+function cacheLoad(){ try{ const t=localStorage.getItem('tunefreq_sked'); if(t){ loadFromText(t,'cached'); return true; } }catch(_){} return false; }
+function loadFromText(text,source){
+  const data=parseEiBi(text);
+  if(!data.length){ setSchedStatus('Could not parse that file — make sure it\'s the EiBi CSV (<code>sked-*.csv</code>), not the fixed-width .txt.',true); return; }
+  schedData=data;
+  document.getElementById('schedControls').hidden=false;
+  if(!document.getElementById('schedTime').value) setSchedTimeNow();
+  const tag = source==='cached' ? ' (from last session)' : source ? ' — '+esc(source) : '';
+  setSchedStatus('<b>'+data.length.toLocaleString()+'</b> entries loaded'+tag+'.');
+  if(source!=='cached') cacheSave(text);
+  const follow=document.getElementById('schedFollow');
+  if(follow && follow.checked && curMHz!=null) document.getElementById('schedFreq').value=trim(+(curMHz*1000).toFixed(3));
+  runSchedQuery();
+  update();   // refresh the dial's live-button label into schedule mode
+}
+
+let _followT=0,_followPending=false;
+function scheduleFollowQuery(){
+  const now=performance.now();
+  if(now-_followT>120){ _followT=now; runSchedQuery(); }
+  else if(!_followPending){ _followPending=true;
+    setTimeout(()=>{ _followPending=false; _followT=performance.now(); runSchedQuery(); },120); }
+}
+
+/* schedule wiring */
+document.getElementById('eibiDl').href=EIBI_URL;
+document.getElementById('schedFile').addEventListener('change',e=>{
+  const file=e.target.files[0]; if(!file) return;
+  setSchedStatus('Reading '+esc(file.name)+'…');
+  const r=new FileReader();
+  r.onload=()=>loadFromText(String(r.result),file.name);
+  r.onerror=()=>setSchedStatus('Could not read that file.',true);
+  r.readAsText(file);
+});
+document.getElementById('schedFetch').addEventListener('click',async ()=>{
+  setSchedStatus('Fetching '+seasonCode(new Date()).toUpperCase()+' from EiBi (via proxy)…');
+  try{
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),12000);
+    const res=await fetch('https://api.allorigins.win/raw?url='+encodeURIComponent(EIBI_URL),{signal:ctrl.signal});
+    clearTimeout(to);
+    if(!res.ok) throw new Error(res.status);
+    loadFromText(await res.text(),'fetched');
+  }catch(err){
+    setSchedStatus('Couldn\'t fetch automatically (network/CORS). Use “Download from EiBi”, then “Load schedule file”.',true);
+  }
+});
+['schedTime','schedFreq','schedTol','schedText','schedOnAir','schedTodayOnly'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener((id==='schedText'||id==='schedFreq')?'input':'change',runSchedQuery);
+});
+document.getElementById('schedNow').addEventListener('click',()=>{ setSchedTimeNow(); runSchedQuery(); });
+document.getElementById('schedUseDial').addEventListener('click',()=>{
+  if(curMHz!=null){ document.getElementById('schedFreq').value=trim(+(curMHz*1000).toFixed(3)); runSchedQuery(); }
+});
+document.getElementById('schedExport').addEventListener('click',exportSched);
+
+// dial's "who's on air" button → jump into the loaded schedule (else fall through to shortwave.live)
+document.getElementById('live-link').addEventListener('click',e=>{
+  if(schedData.length){
+    e.preventDefault();
+    setSchedTimeNow();
+    document.getElementById('schedOnAir').checked=true;
+    if(curMHz!=null) document.getElementById('schedFreq').value=trim(+(curMHz*1000).toFixed(3));
+    runSchedQuery();
+    document.querySelector('.sched').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+});
+cacheLoad();
 
 document.getElementById('ver').textContent='v'+APP_VERSION;
 buildChips();renderTable();applyView();
