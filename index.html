@@ -256,8 +256,18 @@
   .chk{display:inline-flex;align-items:center;gap:7px;font-family:"JetBrains Mono",monospace;font-size:12px;
     color:var(--ink);cursor:pointer;padding-bottom:10px}
   .chk input{accent-color:var(--amber);width:15px;height:15px}
-  .sched-summary{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink-dim);margin:16px 2px 0}
+  .sched-summary{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ink-dim);margin:0}
   .sched-summary b{color:var(--amber)}
+  .sched-panel{margin-top:16px}
+  .sched-panel[hidden]{display:none}
+  .sched-panel-head{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+    background:var(--panel-2);border:1px solid var(--line-2);border-radius:8px;color:var(--ink);
+    font-family:"JetBrains Mono",monospace;padding:11px 14px;cursor:pointer;transition:.15s}
+  .sched-panel-head:hover{border-color:var(--amber-soft)}
+  .sched-panel-head .caret{color:var(--amber);display:inline-block;transition:transform .18s;font-size:12px}
+  .sched-panel.collapsed .caret{transform:rotate(-90deg)}
+  .sched-panel-body{margin-top:10px}
+  .sched-panel.collapsed .sched-panel-body{display:none}
   .sched-scroll{overflow-x:auto;margin-top:10px;border:1px solid var(--line);border-radius:var(--radius)}
   .sched-scroll[hidden]{display:none}
   .sched-table{min-width:660px;font-size:14px;border-collapse:collapse;width:100%}
@@ -365,6 +375,8 @@
     <div id="res-body"><div class="empty">Type a frequency above, or tap one of the examples.</div></div>
   </div>
 
+  <div id="dialResultsMount"></div>
+
   <!-- EXAMPLES -->
   <div class="examples">
     <div class="field-label">Try one</div>
@@ -391,13 +403,14 @@
   <!-- SCHEDULE -->
   <div class="sched">
     <div class="result-head">Schedule — what's on air</div>
-    <p class="sched-intro">Load the EiBi shortwave schedule, then see everything broadcasting at a given UTC time. Narrow it to a frequency or a text filter, and download the result as a CSV table.</p>
+    <p class="sched-intro">See everything broadcasting at a given UTC time from the EiBi shortwave schedule. If <code>sked-a26.csv</code> is hosted next to this page it loads automatically; otherwise load it by hand. Narrow by frequency or text, then download the result as CSV.</p>
 
     <div class="loader">
       <label class="btn file-btn">Load schedule file<input id="schedFile" type="file" accept=".csv,.txt"></label>
+      <button class="btn" id="schedReload">Reload from folder</button>
       <button class="btn" id="schedFetch">Fetch latest</button>
       <a class="btn" id="eibiDl" href="http://www.eibispace.de/dx/" target="_blank" rel="noopener">Download from EiBi ↗</a>
-      <span class="sched-status" id="schedStatus">No schedule loaded — grab <code>sked-a26.csv</code> from EiBi, then load it here.</span>
+      <span class="sched-status" id="schedStatus">No schedule loaded yet.</span>
     </div>
 
     <div class="sched-controls" id="schedControls" hidden>
@@ -429,16 +442,25 @@
       <label class="chk"><input type="checkbox" id="schedFollow" checked> Follow dial</label>
     </div>
 
-    <div class="sched-summary" id="schedSummary"></div>
-    <div class="sched-scroll" id="schedScroll" hidden>
-      <table class="sched-table">
-        <thead><tr><th>kHz</th><th>Station</th><th>UTC</th><th>Lang</th><th>Target</th><th>Site / remarks</th><th>Days</th></tr></thead>
-        <tbody id="schedBody"></tbody>
-      </table>
-    </div>
-    <div class="sched-actions" id="schedActions" hidden>
-      <button class="btn-amber" id="schedExport">Download table (CSV) ↓</button>
-      <span class="codes-link">Language &amp; target codes: <a href="http://www.eibispace.de/dx/README.TXT" target="_blank" rel="noopener">EiBi readme ↗</a></span>
+    <div id="schedResultsMount">
+      <div class="sched-panel" id="schedResultsPanel" hidden>
+        <button class="sched-panel-head" id="schedToggle" aria-expanded="true">
+          <span class="caret" id="schedCaret">▾</span>
+          <span class="sched-summary" id="schedSummary">Results</span>
+        </button>
+        <div class="sched-panel-body" id="schedPanelBody">
+          <div class="sched-scroll" id="schedScroll">
+            <table class="sched-table">
+              <thead><tr><th>kHz</th><th>Station</th><th>UTC</th><th>Lang</th><th>Target</th><th>Site / remarks</th><th>Days</th></tr></thead>
+              <tbody id="schedBody"></tbody>
+            </table>
+          </div>
+          <div class="sched-actions" id="schedActions">
+            <button class="btn-amber" id="schedExport">Download table (CSV) ↓</button>
+            <span class="codes-link">Language &amp; target codes: <a href="http://www.eibispace.de/dx/README.TXT" target="_blank" rel="noopener">EiBi readme ↗</a></span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -447,7 +469,7 @@
 
 <script>
 /* ---------- VERSION ---------- */
-const APP_VERSION = "26.08.03e";
+const APP_VERSION = "26.08.03f";
 
 /* ---------- DATA ---------- lo/hi in MHz. cat: ham | broadcast | utility ---------- */
 const BANDS = [
@@ -890,7 +912,19 @@ function seasonCode(d){
 }
 const EIBI_URL='http://www.eibispace.de/dx/sked-'+seasonCode(new Date())+'.csv';
 
-let schedData=[], schedResults=[];
+let schedData=[], schedResults=[], schedCollapsed=false;
+
+function moveResultsTo(where){
+  const panel=document.getElementById('schedResultsPanel');
+  const mount=document.getElementById(where==='dial'?'dialResultsMount':'schedResultsMount');
+  if(panel.parentNode!==mount) mount.appendChild(panel);
+}
+function applyCollapse(){
+  const panel=document.getElementById('schedResultsPanel');
+  panel.classList.toggle('collapsed',schedCollapsed);
+  document.getElementById('schedToggle').setAttribute('aria-expanded',String(!schedCollapsed));
+  document.getElementById('schedCaret').textContent = schedCollapsed?'▸':'▾';
+}
 
 function parseEiBi(text){
   const out=[];
@@ -958,7 +992,6 @@ function runSchedQuery(){
 }
 function renderSched(res,t,onAirOnly){
   const body=document.getElementById('schedBody');
-  const scroll=document.getElementById('schedScroll');
   const actions=document.getElementById('schedActions');
   const summary=document.getElementById('schedSummary');
   const CAP=500, shown=res.slice(0,CAP);
@@ -978,8 +1011,9 @@ function renderSched(res,t,onAirOnly){
   summary.innerHTML = res.length
     ? `<b>${res.length.toLocaleString()}</b> ${onAirOnly ? 'broadcast'+(res.length>1?'s':'')+' on air at '+hhmm(t)+' UTC' : 'matching entries'}${res.length>CAP?` · showing first ${CAP} — download for the full set`:''}`
     : 'No matches at this time / filter.';
-  scroll.hidden=false;
+  document.getElementById('schedResultsPanel').hidden=false;
   actions.hidden = res.length===0;
+  applyCollapse();
 }
 function csvCell(v){ v=(v==null?'':String(v)); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
 function exportSched(){
@@ -1001,10 +1035,10 @@ function cacheSave(text){ try{
   localStorage.setItem('tunefreq_sked',text);
   localStorage.setItem('tunefreq_sked_meta',JSON.stringify({season:seasonCode(new Date()),date:Date.now(),rows:schedData.length}));
 }catch(_){} }
-function cacheLoad(){ try{ const t=localStorage.getItem('tunefreq_sked'); if(t){ loadFromText(t,'cached'); return true; } }catch(_){} return false; }
-function loadFromText(text,source){
+function cacheLoad(){ try{ const t=localStorage.getItem('tunefreq_sked'); if(t){ return loadFromText(t,'cached',true); } }catch(_){} return false; }
+function loadFromText(text,source,silent){
   const data=parseEiBi(text);
-  if(!data.length){ setSchedStatus('Could not parse that file — make sure it\'s the EiBi CSV (<code>sked-*.csv</code>), not the fixed-width .txt.',true); return; }
+  if(!data.length){ if(!silent) setSchedStatus('Could not parse that file — make sure it\'s the EiBi CSV (<code>sked-*.csv</code>), not the fixed-width .txt.',true); return false; }
   schedData=data;
   document.getElementById('schedControls').hidden=false;
   if(!document.getElementById('schedTime').value) setSchedTimeNow();
@@ -1013,8 +1047,29 @@ function loadFromText(text,source){
   if(source!=='cached') cacheSave(text);
   const follow=document.getElementById('schedFollow');
   if(follow && follow.checked && curMHz!=null) document.getElementById('schedFreq').value=trim(+(curMHz*1000).toFixed(3));
+  moveResultsTo('sched');
   runSchedQuery();
   update();   // refresh the dial's live-button label into schedule mode
+  return true;
+}
+
+// Try to load a schedule sitting in the same folder as this page (same-origin, no CORS)
+async function tryLocalSched(){
+  const names=['sked-'+seasonCode(new Date())+'.csv','schedule.csv','sked.csv','eibi.csv'];
+  for(const n of names){
+    try{
+      const res=await fetch(n,{cache:'no-store'});
+      if(!res.ok) continue;
+      if(loadFromText(await res.text(),'this folder · '+n,true)) return true;
+    }catch(_){}
+  }
+  return false;
+}
+async function initSchedule(){
+  setSchedStatus('Checking this folder for a schedule file…');
+  if(await tryLocalSched()) return;
+  if(cacheLoad()) return;
+  setSchedStatus('No schedule loaded — drop <code>sked-a26.csv</code> in this folder (auto-loads), or load it below.');
 }
 
 let _followT=0,_followPending=false;
@@ -1047,28 +1102,37 @@ document.getElementById('schedFetch').addEventListener('click',async ()=>{
     setSchedStatus('Couldn\'t fetch automatically (network/CORS). Use “Download from EiBi”, then “Load schedule file”.',true);
   }
 });
+const schedControlQuery=()=>{ moveResultsTo('sched'); runSchedQuery(); };
 ['schedTime','schedFreq','schedTol','schedText','schedOnAir','schedTodayOnly'].forEach(id=>{
   const el=document.getElementById(id);
-  el.addEventListener((id==='schedText'||id==='schedFreq')?'input':'change',runSchedQuery);
+  el.addEventListener((id==='schedText'||id==='schedFreq')?'input':'change',schedControlQuery);
 });
-document.getElementById('schedNow').addEventListener('click',()=>{ setSchedTimeNow(); runSchedQuery(); });
+document.getElementById('schedNow').addEventListener('click',()=>{ moveResultsTo('sched'); setSchedTimeNow(); runSchedQuery(); });
 document.getElementById('schedUseDial').addEventListener('click',()=>{
-  if(curMHz!=null){ document.getElementById('schedFreq').value=trim(+(curMHz*1000).toFixed(3)); runSchedQuery(); }
+  if(curMHz!=null){ moveResultsTo('sched'); document.getElementById('schedFreq').value=trim(+(curMHz*1000).toFixed(3)); runSchedQuery(); }
 });
 document.getElementById('schedExport').addEventListener('click',exportSched);
 
-// dial's "who's on air" button → jump into the loaded schedule (else fall through to shortwave.live)
+// dial's "who's on air" button → show results right under the dial (else fall through to shortwave.live)
 document.getElementById('live-link').addEventListener('click',e=>{
   if(schedData.length){
     e.preventDefault();
+    moveResultsTo('dial');
+    schedCollapsed=false;
     setSchedTimeNow();
     document.getElementById('schedOnAir').checked=true;
     if(curMHz!=null) document.getElementById('schedFreq').value=trim(+(curMHz*1000).toFixed(3));
     runSchedQuery();
-    document.querySelector('.sched').scrollIntoView({behavior:'smooth',block:'start'});
+    document.getElementById('schedResultsPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
   }
 });
-cacheLoad();
+document.getElementById('schedToggle').addEventListener('click',()=>{ schedCollapsed=!schedCollapsed; applyCollapse(); });
+document.getElementById('schedReload').addEventListener('click',async ()=>{
+  setSchedStatus('Reloading from this folder…');
+  if(!await tryLocalSched())
+    setSchedStatus('No schedule file found here (looked for <code>sked-'+seasonCode(new Date())+'.csv</code>, <code>schedule.csv</code>). Load it below instead.',true);
+});
+initSchedule();
 
 document.getElementById('ver').textContent='v'+APP_VERSION;
 buildChips();renderTable();applyView();
