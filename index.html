@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Band Plan Dial — HF/VHF/UHF frequency lookup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --chassis:#15120d;
+    --panel:#1e1912;
+    --panel-2:#262019;
+    --dial:#e9e0cb;
+    --ink:#d6cbb0;
+    --ink-dim:#93876b;
+    --line:#332b20;
+    --line-2:#443a2b;
+    --red:#e0524a;
+    --amber:#eaa845;
+    --amber-soft:#c98f3e;
+    --ham:#7fae87;
+    --swbc:#d89747;
+    --util:#8aa0bd;
+    --radius:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #221c14 0%, var(--chassis) 60%) fixed;
+    color:var(--ink);
+    font-family:"Barlow Condensed",ui-sans-serif,-apple-system,Segoe UI,Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.35;
+    min-height:100vh;
+    padding:clamp(14px,3vw,34px);
+  }
+  .wrap{max-width:920px;margin:0 auto}
+
+  /* ---- header ---- */
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--amber-soft);margin-bottom:10px;
+    display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 8px var(--amber);animation:pulse 3.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+  h1{
+    font-weight:600;font-size:clamp(30px,6vw,54px);line-height:.98;
+    letter-spacing:.01em;margin:0 0 4px;color:var(--dial);
+    text-transform:uppercase;
+  }
+  h1 span{color:var(--amber)}
+  .lede{color:var(--ink-dim);font-size:16px;max-width:56ch;margin:0}
+
+  /* ---- console (input + readout) ---- */
+  .console{
+    margin-top:26px;background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line-2);border-radius:var(--radius);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 18px 40px -28px #000;
+    padding:clamp(16px,3vw,24px);
+  }
+  .console-top{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between}
+  .field-label{
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.28em;
+    text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px;
+  }
+  .entry{display:flex;align-items:stretch;gap:0;
+    border:1px solid var(--line-2);border-radius:8px;overflow:hidden;background:#100d09}
+  .entry input{
+    width:150px;background:transparent;border:0;outline:none;color:var(--dial);
+    font-family:"JetBrains Mono",monospace;font-size:22px;font-weight:500;
+    padding:10px 14px;letter-spacing:.02em;
+  }
+  .entry input::placeholder{color:#5c523f}
+  .unit-toggle{display:flex;border-left:1px solid var(--line-2)}
+  .unit-toggle button{
+    background:transparent;border:0;cursor:pointer;color:var(--ink-dim);
+    font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.1em;
+    padding:0 13px;transition:background .15s,color .15s;
+  }
+  .unit-toggle button[aria-pressed="true"]{background:var(--amber);color:#1a1409;font-weight:700}
+  .unit-toggle button:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
+
+  .readout{text-align:right;min-width:220px}
+  .readout .big{
+    font-family:"JetBrains Mono",monospace;font-weight:700;
+    font-size:clamp(30px,7vw,46px);color:var(--amber);letter-spacing:.01em;
+    text-shadow:0 0 14px rgba(234,168,69,.35);line-height:1;
+  }
+  .readout .big .u{font-size:.44em;color:var(--amber-soft);margin-left:.35em;letter-spacing:.12em}
+  .readout .sub{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-dim);
+    margin-top:7px;letter-spacing:.05em}
+  .readout .sub b{color:var(--ink);font-weight:500}
+
+  /* ---- dial ---- */
+  .dial{margin-top:24px;position:relative;padding:6px 0 2px}
+  .dial-scale{position:relative;height:16px;margin:0 2px 4px}
+  .dial-scale .mark{position:absolute;top:0;transform:translateX(-50%);
+    font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--ink-dim);white-space:nowrap}
+  .dial-scale .mark::before{content:"";position:absolute;left:50%;top:14px;width:1px;height:6px;background:var(--line-2)}
+  .lanes{position:relative;background:
+      repeating-linear-gradient(90deg,transparent 0 39px,rgba(255,255,255,.015) 39px 40px);
+    border:1px solid var(--line);border-radius:8px;padding:8px;overflow:hidden;
+    cursor:ew-resize;touch-action:none;user-select:none;-webkit-user-select:none}
+  .lane{position:relative;height:26px;margin:5px 0}
+  .lane-tag{position:absolute;left:0;top:50%;transform:translateY(-50%);z-index:3;
+    font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-dim);
+    background:linear-gradient(90deg,var(--panel) 70%,transparent);padding:3px 10px 3px 4px}
+  .seg{position:absolute;top:3px;height:20px;border-radius:4px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.02em;
+    color:#12100b;font-weight:700;min-width:3px;
+    transition:filter .15s,transform .15s;border:1px solid rgba(0,0,0,.25)}
+  .seg:hover{filter:brightness(1.15)}
+  .seg.active{outline:2px solid var(--dial);outline-offset:1px;transform:translateY(-1px);z-index:2}
+  .seg.ham{background:var(--ham)}
+  .seg.broadcast{background:var(--swbc)}
+  .seg.utility{background:var(--util)}
+  .seg .lbl{padding:0 4px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+  .tick{position:absolute;top:1px;height:24px;width:2px;background:var(--util);cursor:pointer;
+    border-radius:2px;opacity:.75}
+  .tick:hover{opacity:1}
+
+  /* pointer */
+  .pointer{position:absolute;top:-2px;bottom:2px;width:2px;background:var(--red);
+    box-shadow:0 0 10px rgba(224,82,74,.7);z-index:5;pointer-events:none;
+    transition:left .28s cubic-bezier(.22,.61,.36,1)}
+  .pointer::before{content:"";position:absolute;top:-2px;left:50%;transform:translateX(-50%);
+    border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--red)}
+  .pointer.dragging{transition:none}
+  .pointer.offdial{background:var(--amber);box-shadow:0 0 10px rgba(234,168,69,.7)}
+  .pointer.offdial::before{border-top-color:var(--amber)}
+  .dial-hint{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--ink-dim);
+    letter-spacing:.03em;margin-top:9px;opacity:.85}
+  .offdial-note{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--amber-soft);
+    text-align:right;margin-top:8px;letter-spacing:.04em;display:none}
+  .offdial-note.show{display:block}
+
+  /* live schedule link */
+  .live-bar{display:none;align-items:center;gap:14px;margin-top:18px;flex-wrap:wrap}
+  .live-bar.show{display:flex}
+  .live-bar a{display:inline-flex;align-items:center;gap:8px;background:var(--amber);
+    color:#1a1409;font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:700;
+    letter-spacing:.02em;text-decoration:none;padding:10px 16px;border-radius:7px;
+    transition:filter .15s,transform .15s}
+  .live-bar a:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .live-bar a:focus-visible{outline:2px solid var(--dial);outline-offset:2px}
+  .live-bar .hint{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-dim);letter-spacing:.04em}
+
+  /* ---- results ---- */
+  .results{margin-top:26px;display:grid;gap:12px}
+  .result-head{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.26em;
+    text-transform:uppercase;color:var(--ink-dim)}
+  .card{background:var(--panel);border:1px solid var(--line-2);border-radius:var(--radius);
+    padding:15px 17px;border-left-width:4px;animation:rise .35s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card.ham{border-left-color:var(--ham)}
+  .card.broadcast{border-left-color:var(--swbc)}
+  .card.utility{border-left-color:var(--util)}
+  .card-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .card-name{font-size:23px;font-weight:600;color:var(--dial);text-transform:uppercase;letter-spacing:.01em}
+  .card-cat{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;padding:3px 8px;border-radius:4px;color:#12100b;font-weight:700}
+  .card-cat.ham{background:var(--ham)}
+  .card-cat.broadcast{background:var(--swbc)}
+  .card-cat.utility{background:var(--util)}
+  .card-range{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--amber-soft);margin-top:2px}
+  .card-use{font-size:16px;color:var(--ink);margin-top:9px}
+  .card-note{font-size:15px;color:var(--ink-dim);margin-top:5px}
+  .card-note b{color:var(--amber-soft);font-weight:600}
+  .empty{background:var(--panel);border:1px dashed var(--line-2);border-radius:var(--radius);
+    padding:18px;color:var(--ink-dim);font-size:16px}
+
+  /* ---- examples ---- */
+  .examples{margin-top:20px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+  .chip{background:var(--panel);border:1px solid var(--line-2);color:var(--ink);
+    font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.02em;
+    padding:7px 12px;border-radius:20px;cursor:pointer;transition:border-color .15s,color .15s}
+  .chip:hover{border-color:var(--amber-soft);color:var(--dial)}
+  .chip:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+  /* ---- reference table ---- */
+  .ref{margin-top:40px}
+  .ref-bar{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .filters{display:flex;gap:7px;flex-wrap:wrap}
+  .filters button{background:var(--panel);border:1px solid var(--line-2);color:var(--ink-dim);
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    padding:7px 12px;border-radius:6px;cursor:pointer;transition:.15s}
+  .filters button[aria-pressed="true"]{background:var(--ink);color:var(--chassis);border-color:var(--ink);font-weight:700}
+  .filters button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .ref-search input{background:#100d09;border:1px solid var(--line-2);border-radius:6px;color:var(--dial);
+    font-family:"JetBrains Mono",monospace;font-size:13px;padding:8px 12px;width:190px;outline:none}
+  .ref-search input:focus{border-color:var(--amber-soft)}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  thead th{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line-2);font-weight:500}
+  tbody tr{border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s}
+  tbody tr:hover{background:var(--panel)}
+  tbody td{padding:10px;vertical-align:top}
+  .swatch{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;vertical-align:baseline}
+  .swatch.ham{background:var(--ham)}.swatch.broadcast{background:var(--swbc)}.swatch.utility{background:var(--util)}
+  td.name{color:var(--dial);font-weight:600;white-space:nowrap}
+  td.range{font-family:"JetBrains Mono",monospace;color:var(--amber-soft);white-space:nowrap;font-size:13px}
+  td.use{color:var(--ink-dim)}
+
+  footer{margin-top:34px;color:var(--ink-dim);font-size:13px;font-family:"JetBrains Mono",monospace;
+    letter-spacing:.02em;border-top:1px solid var(--line);padding-top:16px}
+  footer .ver{color:var(--amber-soft);white-space:nowrap}
+
+  @media (max-width:560px){
+    .readout{text-align:left;min-width:0;width:100%}
+    .entry input{width:110px}
+    .lane-tag{font-size:8px}
+    .card-use,.card-note{font-size:15px}
+    thead{display:none}
+    table,tbody,tr,td{display:block;width:100%}
+    tbody tr{padding:11px 2px}
+    tbody td{padding:2px 0}
+    td.name{white-space:normal;font-size:17px}
+    td.range{white-space:normal;font-size:13px;margin-top:1px}
+    td.use{display:block;color:var(--ink-dim);font-size:14px;margin-top:3px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow"><span class="dot"></span> HF · VHF · UHF Band Plan &nbsp;·&nbsp; Nashville EM76</div>
+  <h1>Tune &amp; <span>Identify</span></h1>
+  <p class="lede">Enter a frequency and the pointer finds it on the dial, then lists every band and allocation it falls in — amateur, shortwave broadcast, and utility.</p>
+
+  <!-- CONSOLE -->
+  <div class="console">
+    <div class="console-top">
+      <div>
+        <div class="field-label">Frequency</div>
+        <div class="entry">
+          <input id="freq" type="text" inputmode="decimal" placeholder="15500" aria-label="Frequency value" autocomplete="off" />
+          <div class="unit-toggle" role="group" aria-label="Unit">
+            <button id="ukhz" aria-pressed="true">kHz</button>
+            <button id="umhz" aria-pressed="false">MHz</button>
+          </div>
+        </div>
+      </div>
+      <div class="readout" aria-live="polite">
+        <div class="big" id="ro-big">— <span class="u">MHz</span></div>
+        <div class="sub" id="ro-sub">Awaiting input</div>
+      </div>
+    </div>
+
+    <div class="live-bar" id="live-bar">
+      <a id="live-link" href="#" target="_blank" rel="noopener">Who's on air near — kHz ↗</a>
+      <span class="hint">live shortwave schedule · shortwave.live (EiBi/AOKI)</span>
+    </div>
+
+    <!-- DIAL -->
+    <div class="dial">
+      <div class="dial-scale" id="scale"></div>
+      <div class="lanes" id="lanes">
+        <div class="lane" id="lane-broadcast"><span class="lane-tag">Broadcast</span></div>
+        <div class="lane" id="lane-amateur"><span class="lane-tag">Amateur</span></div>
+        <div class="lane" id="lane-util" style="height:12px"><span class="lane-tag" style="background:none">Utility</span></div>
+        <div class="pointer" id="pointer" style="left:-100px"></div>
+      </div>
+      <div class="dial-hint">Tap or drag the dial to tune · ↑ ↓ keys nudge · scroll to fine-tune</div>
+      <div class="offdial-note" id="offdial">↑ Above the HF dial (30 MHz) — see the card below and the VHF/UHF rows in the reference.</div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results">
+    <div class="result-head" id="res-head">Matches</div>
+    <div id="res-body"><div class="empty">Type a frequency above, or tap one of the examples.</div></div>
+  </div>
+
+  <!-- EXAMPLES -->
+  <div class="examples">
+    <div class="field-label">Try one</div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <!-- REFERENCE -->
+  <div class="ref">
+    <div class="ref-bar">
+      <div class="filters" role="group" aria-label="Filter bands">
+        <button data-f="all" aria-pressed="true">All</button>
+        <button data-f="ham" aria-pressed="false">Amateur</button>
+        <button data-f="broadcast" aria-pressed="false">Shortwave</button>
+        <button data-f="utility" aria-pressed="false">Utility</button>
+      </div>
+      <div class="ref-search"><input id="search" type="search" placeholder="search bands…" aria-label="Search bands" autocomplete="off"></div>
+    </div>
+    <table>
+      <thead><tr><th>Band</th><th>Range</th><th>Primary use</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <footer>Allocations are US/ITU Region 2 general references for listening, not a legal operating authority. Meter-band edges vary seasonally (HFCC/EiBi). Built as a personal reference. <span class="ver" id="ver"></span></footer>
+</div>
+
+<script>
+/* ---------- VERSION ---------- */
+const APP_VERSION = "26.08.03a";
+
+/* ---------- DATA ---------- lo/hi in MHz. cat: ham | broadcast | utility ---------- */
+const BANDS = [
+  // Amateur
+  {name:"2200 m", cat:"ham", lo:0.1357, hi:0.1378, use:"LF amateur — CW & very slow digital (WSPR/QRSS)", note:"Experimental; needs a big antenna and patience."},
+  {name:"630 m",  cat:"ham", lo:0.472,  hi:0.479,  use:"MF amateur — CW & digital", note:"Niche night band just above the AM broadcast top."},
+  {name:"160 m",  cat:"ham", lo:1.8,    hi:2.0,    use:"Top band — AM/CW/SSB, strong at night", note:"Best on winter nights; noisy in summer storms."},
+  {name:"80 m",   cat:"ham", lo:3.5,    hi:4.0,    use:"Regional SSB/CW/digital, night DX", note:"Nets and ragchews after dark."},
+  {name:"60 m",   cat:"ham", lo:5.3305, hi:5.4035, use:"Channelized SSB — five fixed channels", note:"Emergency/regional; not a continuous band."},
+  {name:"40 m",   cat:"ham", lo:7.0,    hi:7.3,    use:"Reliable day & night ham band", note:"Shares 7.2–7.45 with broadcasters — expect crowding."},
+  {name:"30 m",   cat:"ham", lo:10.1,   hi:10.15,  use:"CW & digital only — no phone", note:"WWV time signal sits just below at 10.000 MHz."},
+  {name:"20 m",   cat:"ham", lo:14.0,   hi:14.35,  use:"Premier daytime DX band", note:"Open somewhere almost always when the sun's up."},
+  {name:"17 m",   cat:"ham", lo:18.068, hi:18.168, use:"Daytime DX, quieter than 20 m", note:""},
+  {name:"15 m",   cat:"ham", lo:21.0,   hi:21.45,  use:"Daytime DX, loves high solar flux", note:"Wakes up when SFI climbs."},
+  {name:"12 m",   cat:"ham", lo:24.89,  hi:24.99,  use:"Sporadic daytime DX", note:"Opens on good conditions."},
+  {name:"10 m",   cat:"ham", lo:28.0,   hi:29.7,   use:"Daytime DX, sporadic-E, FM up top", note:"Sits just above CB (27 MHz)."},
+  {name:"6 m",    cat:"ham", lo:50,     hi:54,     use:"The 'magic band' — sporadic-E, meteor scatter", note:""},
+  {name:"2 m",    cat:"ham", lo:144,    hi:148,    use:"VHF FM/SSB, repeaters", note:"Active Nashville repeaters."},
+  {name:"1.25 m", cat:"ham", lo:222,    hi:225,    use:"VHF FM, less common", note:""},
+  {name:"70 cm",  cat:"ham", lo:420,    hi:450,    use:"UHF FM, repeaters, satellites", note:"Adjacent to Nashville Metro P25 (decode w/ SDRTrunk)."},
+  {name:"33 cm",  cat:"ham", lo:902,    hi:928,    use:"Shared with ISM — expect noise", note:""},
+  {name:"23 cm",  cat:"ham", lo:1240,   hi:1300,   use:"Microwave — ATV, weak-signal, sats", note:""},
+
+  // Broadcast
+  {name:"AM MW",  cat:"broadcast", lo:0.53, hi:1.7,  use:"AM broadcast (mediumwave)", note:"Locals by day; skywave DX after dark."},
+  {name:"120 m",  cat:"broadcast", lo:2.3,  hi:2.495,use:"Tropical broadcast band", note:"Mostly equatorial regional stations."},
+  {name:"90 m",   cat:"broadcast", lo:3.2,  hi:3.4,  use:"Tropical broadcast band", note:""},
+  {name:"75 m",   cat:"broadcast", lo:3.9,  hi:4.0,  use:"Broadcast (region-dependent)", note:"Overlaps the top of ham 80 m."},
+  {name:"60 m SWBC",cat:"broadcast",lo:4.75, hi:5.06, use:"Tropical broadcast band", note:"Some African/Asian regionals at night."},
+  {name:"49 m",   cat:"broadcast", lo:5.9,  hi:6.2,  use:"Strong nighttime broadcast band", note:"Most reliable after dark in North America."},
+  {name:"41 m",   cat:"broadcast", lo:7.2,  hi:7.45, use:"Broadcast, shares with ham 40 m", note:"Crowded in the evenings."},
+  {name:"31 m",   cat:"broadcast", lo:9.4,  hi:9.9,  use:"The workhorse — active day & night", note:"Best all-round SWBC band to start on."},
+  {name:"25 m",   cat:"broadcast", lo:11.6, hi:12.1, use:"Daytime & evening broadcast", note:""},
+  {name:"22 m",   cat:"broadcast", lo:13.57,hi:13.87,use:"Daytime broadcast", note:""},
+  {name:"19 m",   cat:"broadcast", lo:15.1, hi:15.83,use:"Daytime broadcast, long-haul DX", note:"15500 kHz lives here — the one you asked about."},
+  {name:"16 m",   cat:"broadcast", lo:17.48,hi:17.9, use:"Daytime broadcast", note:""},
+  {name:"15 m SWBC",cat:"broadcast",lo:18.9, hi:19.02,use:"Small daytime broadcast segment", note:"Lightly used."},
+  {name:"13 m",   cat:"broadcast", lo:21.45,hi:21.85,use:"Daytime broadcast, high-sun only", note:"Needs strong propagation."},
+  {name:"11 m SWBC",cat:"broadcast",lo:25.67,hi:26.1, use:"Daytime broadcast, sporadic", note:"Only really opens at high solar flux."},
+  {name:"FM",     cat:"broadcast", lo:88,   hi:108,  use:"FM broadcast", note:""},
+
+  // Utility
+  {name:"WWV / WWVH", cat:"utility", ticks:[2.5,5,10,15,20], use:"Standard time & frequency stations", note:"Ft. Collins (WWV) & Hawaii (WWVH) — a propagation yardstick."},
+  {name:"CB",     cat:"utility", lo:26.965, hi:27.405, use:"Citizens Band — 40 channels, AM/SSB", note:"10 m openings can drag distant CB in."},
+  {name:"Airband",cat:"utility", lo:108,  hi:137,  use:"Aircraft voice (AM)", note:"Nashville tower / approach / center."},
+  {name:"Marine VHF",cat:"utility",lo:156, hi:162,  use:"Marine voice channels", note:""},
+  {name:"NOAA WX",cat:"utility", lo:162.4,hi:162.55,use:"NOAA Weather Radio", note:"Nashville transmits on 162.550 MHz."},
+  {name:"ADS-B",  cat:"utility", lo:1089, hi:1091, use:"Aircraft position (1090ES)", note:"~1090 MHz; decode with dump1090."},
+  {name:"MURS", cat:"utility", ticks:[151.82,151.88,151.94,154.57,154.6], use:"Multi-Use Radio Service — 5 VHF channels, license-free", note:"No license and no repeaters; 2 W max. A quieter alternative to FRS."},
+  {name:"FRS / GMRS", cat:"utility", lo:462.5625, hi:462.725, use:"Family Radio & GMRS — UHF FM walkie-talkies", note:"Channels 1–7 & 15–22. FRS is license-free; GMRS needs a cheap FCC license for more power and repeaters."},
+  {name:"FRS 8–14 / GMRS in", cat:"utility", lo:467.5625, hi:467.725, use:"FRS low-power channels 8–14 + GMRS repeater inputs", note:"Handhelds use these as FRS 8–14; GMRS repeaters receive here."},
+];
+
+/* ---------- DIAL SCALE ---------- */
+const F_MIN=0.1, F_MAX=30; // MHz dial window
+const L_MIN=Math.log10(F_MIN), L_SPAN=Math.log10(F_MAX)-L_MIN;
+const xFrac = f => (Math.log10(Math.max(F_MIN,Math.min(F_MAX,f)))-L_MIN)/L_SPAN;
+
+function buildScale(){
+  const marks=[0.1,0.3,0.5,1,3,5,10,15,30];
+  const el=document.getElementById('scale');
+  el.innerHTML='';
+  marks.forEach(m=>{
+    const d=document.createElement('div');
+    d.className='mark';d.style.left=(xFrac(m)*100)+'%';
+    d.textContent = m<1 ? (m*1000)+'k' : m+'M';
+    el.appendChild(d);
+  });
+}
+
+function buildLanes(){
+  const bc=document.getElementById('lane-broadcast');
+  const am=document.getElementById('lane-amateur');
+  const ut=document.getElementById('lane-util');
+  bc.querySelectorAll('.seg').forEach(e=>e.remove());
+  am.querySelectorAll('.seg').forEach(e=>e.remove());
+  ut.querySelectorAll('.seg,.tick').forEach(e=>e.remove());
+
+  BANDS.forEach((b,i)=>{
+    if(b.ticks){
+      b.ticks.forEach(t=>{
+        if(t>F_MAX) return;
+        const k=document.createElement('div');
+        k.className='tick';k.style.left='calc('+(xFrac(t)*100)+'% - 1px)';
+        k.title=b.name+' — '+t+' MHz';
+        k.addEventListener('click',()=>setFreq(t));
+        ut.appendChild(k);
+      });
+      return;
+    }
+    if(b.lo>=F_MAX) return; // off the HF dial
+    const seg=document.createElement('div');
+    seg.className='seg '+b.cat;
+    seg.dataset.idx=i;
+    const l=xFrac(b.lo)*100, w=Math.max((xFrac(b.hi)-xFrac(b.lo))*100,0.4);
+    seg.style.left=l+'%';seg.style.width=w+'%';
+    seg.title=b.name+'  ('+fmtRange(b)+')';
+    const lbl=document.createElement('span');lbl.className='lbl';
+    lbl.textContent=b.name.replace(/ m$| cm$| SWBC$| MW$/,'');
+    seg.appendChild(lbl);
+    seg.addEventListener('click',()=>{ if(justDragged) return; setFreq((b.lo+b.hi)/2); });
+    (b.cat==='broadcast'?bc:am).appendChild(seg);
+  });
+}
+
+/* ---------- FORMAT ---------- */
+function fmtRange(b){
+  if(b.ticks) return b.ticks.map(t=>t+' MHz').join(' · ');
+  const asK = b.hi < 3; // show low bands in kHz
+  if(asK) return (b.lo*1000).toFixed(b.lo*1000%1?1:0)+'–'+(b.hi*1000).toFixed(b.hi*1000%1?1:0)+' kHz';
+  return trim(b.lo)+'–'+trim(b.hi)+' MHz';
+}
+function trim(n){return (+n.toFixed(4)).toString();}
+const CATLABEL={ham:"Amateur",broadcast:"Shortwave",utility:"Utility"};
+
+/* ---------- STATE ---------- */
+let unit='khz';       // khz | mhz
+let curMHz=null;
+
+function readInput(){
+  const raw=document.getElementById('freq').value.trim().replace(/,/g,'');
+  if(raw==='') return null;
+  const v=parseFloat(raw);
+  if(isNaN(v)||v<=0) return null;
+  return unit==='khz' ? v/1000 : v;
+}
+
+function setUnit(u){
+  if(u===unit) return;
+  // keep the same physical frequency: convert the box value
+  const cur=readInput();
+  unit=u;
+  document.getElementById('ukhz').setAttribute('aria-pressed', u==='khz');
+  document.getElementById('umhz').setAttribute('aria-pressed', u==='mhz');
+  if(cur!=null){
+    const box=document.getElementById('freq');
+    box.value = u==='khz' ? +(cur*1000).toFixed(3) : +cur.toFixed(6);
+  }
+  update();
+}
+
+function setFreq(mhz){
+  const box=document.getElementById('freq');
+  box.value = unit==='khz' ? +(mhz*1000).toFixed(3) : +mhz.toFixed(6);
+  update();
+}
+
+function matchesAt(mhz){
+  return BANDS.filter(b=>{
+    if(b.ticks) return b.ticks.some(t=>Math.abs(t-mhz)<=0.003);
+    return mhz>=b.lo && mhz<=b.hi;
+  });
+}
+
+/* ---------- RENDER ---------- */
+function update(){
+  const mhz=readInput();
+  curMHz=mhz;
+  const big=document.getElementById('ro-big');
+  const sub=document.getElementById('ro-sub');
+  const ptr=document.getElementById('pointer');
+  const off=document.getElementById('offdial');
+  const lb=document.getElementById('live-bar');
+  const ll=document.getElementById('live-link');
+
+  // clear active segs
+  document.querySelectorAll('.seg.active').forEach(s=>s.classList.remove('active'));
+
+  if(mhz==null){
+    big.innerHTML='— <span class="u">MHz</span>';
+    sub.textContent='Awaiting input';
+    ptr.style.left='-100px';off.classList.remove('show');
+    lb.classList.remove('show');
+    renderResults(null);return;
+  }
+
+  // readout
+  const kHz=Math.round(mhz*1000*1000)/1000;
+  big.innerHTML = trim(+mhz.toFixed(6))+' <span class="u">MHz</span>';
+  const ms=matchesAt(mhz);
+  const bandTag = ms.length ? ms.map(b=>b.name).join(' · ') : 'no allocation';
+  sub.innerHTML = kHz.toLocaleString()+' kHz &nbsp;·&nbsp; <b>'+bandTag+'</b>';
+
+  // live schedule deep link — shortwave.live covers LW/MW/SW (~40 kHz–30 MHz)
+  if(mhz>=0.03 && mhz<=30){
+    const q=trim(+(mhz*1000).toFixed(3));
+    ll.href='https://shortwave.live/khz?q='+q;
+    ll.textContent="Who's on air near "+q+' kHz ↗';
+    lb.classList.add('show');
+  }else{
+    lb.classList.remove('show');
+  }
+
+  // pointer
+  if(mhz>F_MAX){
+    ptr.classList.add('offdial');
+    ptr.style.left='calc(100% - 2px)';
+    off.classList.add('show');
+  }else{
+    ptr.classList.remove('offdial');
+    ptr.style.left='calc('+(xFrac(mhz)*100)+'% - 1px)';
+    off.classList.remove('show');
+  }
+  // highlight matching segs on the dial
+  ms.forEach(b=>{
+    const idx=BANDS.indexOf(b);
+    const s=document.querySelector('.seg[data-idx="'+idx+'"]');
+    if(s) s.classList.add('active');
+  });
+
+  renderResults(ms);
+}
+
+function renderResults(ms){
+  const head=document.getElementById('res-head');
+  const body=document.getElementById('res-body');
+  if(ms==null){
+    head.textContent='Matches';
+    body.innerHTML='<div class="empty">Type a frequency above, or tap one of the examples.</div>';
+    return;
+  }
+  if(ms.length===0){
+    head.textContent='0 matches';
+    body.innerHTML='<div class="empty">No standard allocation here — this frequency falls between bands. Try nudging it toward a colored segment on the dial.</div>';
+    return;
+  }
+  head.textContent = ms.length+(ms.length>1?' matches — this frequency is shared':' match');
+  body.innerHTML = ms.map(b=>`
+    <div class="card ${b.cat}">
+      <div class="card-top">
+        <div>
+          <div class="card-name">${b.name}</div>
+          <div class="card-range">${fmtRange(b)}</div>
+        </div>
+        <div class="card-cat ${b.cat}">${CATLABEL[b.cat]}</div>
+      </div>
+      <div class="card-use">${b.use}</div>
+      ${b.note?`<div class="card-note">${b.note.replace(/(15500 kHz|WWV|SDRTrunk|162\.550 MHz|dump1090)/g,'<b>$1</b>')}</div>`:''}
+    </div>`).join('');
+}
+
+/* ---------- REFERENCE TABLE ---------- */
+let refFilter='all', refSearch='';
+function renderTable(){
+  const tb=document.getElementById('tbody');
+  const q=refSearch.toLowerCase();
+  const rows=BANDS
+    .filter(b=>refFilter==='all'||b.cat===refFilter)
+    .filter(b=> !q || (b.name+' '+b.use+' '+(b.note||'')).toLowerCase().includes(q))
+    .sort((a,b)=>(a.ticks?a.ticks[0]:a.lo)-(b.ticks?b.ticks[0]:b.lo));
+  tb.innerHTML = rows.map(b=>`
+    <tr data-name="${b.name}">
+      <td class="name"><span class="swatch ${b.cat}"></span>${b.name}</td>
+      <td class="range">${fmtRange(b)}</td>
+      <td class="use">${b.use}</td>
+    </tr>`).join('') || '<tr><td colspan="3" style="color:var(--ink-dim);padding:16px">No bands match that search.</td></tr>';
+  tb.querySelectorAll('tr[data-name]').forEach(tr=>{
+    tr.addEventListener('click',()=>{
+      const b=BANDS.find(x=>x.name===tr.dataset.name);
+      if(!b) return;
+      setFreq(b.ticks?b.ticks[Math.floor(b.ticks.length/2)]:(b.lo+b.hi)/2);
+      document.querySelector('.console').scrollIntoView({behavior:'smooth',block:'start'});
+    });
+  });
+}
+
+/* ---------- EXAMPLES ---------- */
+const EXAMPLES=[
+  {t:"630 kHz · AM", f:0.63},
+  {t:"5 MHz · WWV", f:5.0},
+  {t:"7.2 MHz · 40 m + 41 m", f:7.2},
+  {t:"9.9 MHz · 31 m", f:9.9},
+  {t:"15500 kHz · 19 m", f:15.5},
+  {t:"27.185 · CB 19", f:27.185},
+  {t:"162.55 · NOAA", f:162.55},
+  {t:"1090 · ADS-B", f:1090},
+];
+function buildChips(){
+  const c=document.getElementById('chips');
+  EXAMPLES.forEach(e=>{
+    const b=document.createElement('button');
+    b.className='chip';b.textContent=e.t;
+    b.addEventListener('click',()=>{setFreq(e.f);document.querySelector('.console').scrollIntoView({behavior:'smooth',block:'start'});});
+    c.appendChild(b);
+  });
+}
+
+/* ---------- WIRE UP ---------- */
+document.getElementById('freq').addEventListener('input',update);
+document.getElementById('ukhz').addEventListener('click',()=>setUnit('khz'));
+document.getElementById('umhz').addEventListener('click',()=>setUnit('mhz'));
+document.querySelectorAll('.filters button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filters button').forEach(b=>b.setAttribute('aria-pressed','false'));
+    btn.setAttribute('aria-pressed','true');
+    refFilter=btn.dataset.f;renderTable();
+  });
+});
+document.getElementById('search').addEventListener('input',e=>{refSearch=e.target.value;renderTable();});
+window.addEventListener('resize',()=>{buildScale();buildLanes();update();});
+
+/* ---------- INTERACTIVE DIAL ---------- */
+const lanesEl=document.getElementById('lanes');
+const ptrEl=document.getElementById('pointer');
+let dragging=false, moved=false, justDragged=false;
+
+const freqFromX=cx=>{
+  const r=lanesEl.getBoundingClientRect();
+  let fr=(cx-r.left)/r.width; fr=Math.max(0,Math.min(1,fr));
+  return Math.pow(10, L_MIN + fr*L_SPAN);
+};
+const roundTune=f=> f<1 ? +f.toFixed(4) : +f.toFixed(3);
+function tuneAt(cx){ setFreq(roundTune(freqFromX(cx))); }
+
+lanesEl.addEventListener('pointerdown',e=>{
+  dragging=true;moved=false;ptrEl.classList.add('dragging');
+  try{lanesEl.setPointerCapture(e.pointerId);}catch(_){}
+  tuneAt(e.clientX);
+});
+lanesEl.addEventListener('pointermove',e=>{ if(dragging){moved=true;tuneAt(e.clientX);} });
+function endDrag(){ if(!dragging)return; dragging=false;ptrEl.classList.remove('dragging');
+  if(moved){justDragged=true;setTimeout(()=>{justDragged=false;},60);} }
+lanesEl.addEventListener('pointerup',endDrag);
+lanesEl.addEventListener('pointercancel',endDrag);
+
+// scroll to fine-tune while hovering the dial
+lanesEl.addEventListener('wheel',e=>{
+  if(curMHz==null) return; e.preventDefault();
+  nudge(e.deltaY<0?1:-1, e.shiftKey);
+},{passive:false});
+
+// arrow keys nudge from the input (Shift = coarse)
+document.getElementById('freq').addEventListener('keydown',e=>{
+  if(e.key==='ArrowUp'){e.preventDefault();nudge(1,e.shiftKey);}
+  else if(e.key==='ArrowDown'){e.preventDefault();nudge(-1,e.shiftKey);}
+});
+function nudge(dir,big){
+  const base = curMHz!=null ? curMHz : (readInput()||0);
+  const step = big?0.1:0.001;           // 100 kHz / 1 kHz
+  let v = base + dir*step;
+  if(v<0.001) v=0.001;
+  setFreq(+v.toFixed(4));
+}
+
+document.getElementById('ver').textContent='v'+APP_VERSION;
+buildScale();buildLanes();buildChips();renderTable();update();
+</script>
+</body>
+</html>
